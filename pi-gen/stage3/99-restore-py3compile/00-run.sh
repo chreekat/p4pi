@@ -1,21 +1,22 @@
 #!/bin/bash -e
 
-# Restore the real py3compile / py3clean that were replaced by a no-op stub
-# in stage1/00-qemu-py-compat to work around QEMU ARM64 Python segfaults.
-# Running this near the end of stage3 ensures the final image ships a fully
-# functional py3compile for users who install Python packages at runtime.
+# Undo the py3compile / py3clean diversions set up in stage1/00-qemu-py-compat
+# to work around QEMU ARM64 Python segfaults. Removing the diversion renames
+# the real binary back into place, so the final image ships a fully functional
+# py3compile for users who install Python packages at runtime.
 
 restore_tool() {
-	local TOOL_PATH="$1"
-	if [ -f "${TOOL_PATH}.qemu-bak" ]; then
-		mv "${TOOL_PATH}.qemu-bak" "${TOOL_PATH}" || {
-		echo "Error: Failed to restore ${TOOL_PATH}" >&2
-		return 1
-	}
-	else
-		echo "Warning: ${TOOL_PATH}.qemu-bak not found; stub may not have been created." >&2
-	fi
+	local TOOL="$1"
+	on_chroot << EOF
+if dpkg-divert --list "${TOOL}" | grep -q .; then
+	# Drop our no-op stub so --rename can move the real binary back.
+	rm -f "${TOOL}"
+	dpkg-divert --remove --rename "${TOOL}"
+else
+	echo "Warning: no diversion found for ${TOOL}; stub may not have been created." >&2
+fi
+EOF
 }
 
-restore_tool "${ROOTFS_DIR}/usr/bin/py3compile"
-restore_tool "${ROOTFS_DIR}/usr/bin/py3clean"
+restore_tool /usr/bin/py3compile
+restore_tool /usr/bin/py3clean
