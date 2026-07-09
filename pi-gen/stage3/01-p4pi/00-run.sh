@@ -7,6 +7,9 @@ on_chroot << EOF
 echo 'deb http://download.opensuse.org/repositories/home:/p4lang/Raspbian_11/ /' | tee /etc/apt/sources.list.d/p4pi-kernel.list
 curl -fsSL https://download.opensuse.org/repositories/home:p4lang/Raspbian_11/Release.key | gpg --dearmor > /etc/apt/trusted.gpg.d/home_p4lang.gpg
 
+echo 'deb http://download.opensuse.org/repositories/home:/p4lang/Debian_11/ /' | tee /etc/apt/sources.list.d/home:p4lang.list
+curl -fsSL https://download.opensuse.org/repositories/home:p4lang/Debian_11/Release.key | gpg --dearmor | tee /etc/apt/trusted.gpg.d/home_p4lang.gpg > /dev/null
+
 apt-get -y update
 
 wget https://raw.githubusercontent.com/p4lang/behavioral-model/main/tools/p4dbg.py
